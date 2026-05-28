@@ -124,10 +124,18 @@ function Game() {
       if (ball.x - BALL_R < 0) { ball.x = BALL_R; ball.vx = Math.abs(ball.vx); }
       if (ball.x + BALL_R > CANVAS_W) { ball.x = CANVAS_W - BALL_R; ball.vx = -Math.abs(ball.vx); }
       if (ball.y - BALL_R < 0) { ball.y = BALL_R; ball.vy = Math.abs(ball.vy); }
+      // 水平ループ防止: vyが小さすぎる場合は強制的に角度をつける
+      if (Math.abs(ball.vy) < BALL_SPEED * 0.3) {
+        ball.vy = ball.vy < 0 ? -BALL_SPEED * 0.3 : BALL_SPEED * 0.3;
+        ball.vx = Math.sign(ball.vx) * Math.sqrt(BALL_SPEED * BALL_SPEED - ball.vy * ball.vy);
+      }
       if (ball.y + BALL_R >= s.paddle.y && ball.y + BALL_R <= s.paddle.y + PADDLE_H + 6 && ball.x >= s.paddle.x && ball.x <= s.paddle.x + PADDLE_W && ball.vy > 0) {
         const hit = (ball.x - (s.paddle.x + PADDLE_W / 2)) / (PADDLE_W / 2);
         ball.vx = hit * BALL_SPEED * 1.2;
-        ball.vy = -Math.sqrt(Math.max(0, BALL_SPEED * BALL_SPEED - ball.vx * ball.vx));
+        // vxが大きすぎる場合は制限してvyに最小角度を保証
+        const MIN_VY = BALL_SPEED * 0.4;
+        ball.vx = Math.max(-BALL_SPEED * 0.9, Math.min(BALL_SPEED * 0.9, ball.vx));
+        ball.vy = -Math.sqrt(Math.max(MIN_VY * MIN_VY, BALL_SPEED * BALL_SPEED - ball.vx * ball.vx));
         ball.y = s.paddle.y - BALL_R;
       }
       if (ball.y - BALL_R > CANVAS_H) ball.alive = false;
