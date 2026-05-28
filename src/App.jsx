@@ -246,7 +246,7 @@ function Game() {
 
   const startGame = () => { setPhase("playing"); setTimeout(() => { initStage(1, LIVES_INIT, TIME_INIT, 0, 1); rafRef.current = requestAnimationFrame(gameLoop); }, 50); };
   useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
-  useEffect(() => { if (phase === "playing" && stateRef.current) { stateRef.current.running = true; rafRef.current = requestAnimationFrame(gameLoop); } return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }; }, [phase, gameLoop]);
+  useEffect(() => { return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }; }, []);
 
   return (
     <div style={styles.root} ref={rootRef}>
