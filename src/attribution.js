@@ -1,29 +1,28 @@
-// ERC-8021 Attribution - 正式仕様準拠
-// フォーマット: TX_DATA + [CODE_HEX] + [SCHEMA_ID(1byte)] + [ERC_MARKER(16bytes)]
+// ERC-8021 Attribution - Schema 0 (canonical registry)
+// Format: txData || codes || codesLength(1) || schemaId(0) || ercMarker(16)
 
-const BUILDER_CODE = "bc_dw8n1qvm";
+const ERC_MARKER = "80218021802180218021802180218021"; // 16 bytes
+const SCHEMA_ID = "00"; // Schema 0
+const BUILDER_CODE = "bc_dw8n1qvm"; // あなたのビルダーコード
 
-// 16バイトのERCマーカー（固定値）
-const ERC_MARKER = "ef920001000000000000000000000000";
-
-export function addERC8021Attribution(existingData) {
-  // ビルダーコードをhexに変換
-  const codeBytes = Array.from(new TextEncoder().encode(BUILDER_CODE))
+export function getDataSuffix() {
+  // Encode builder code as ASCII hex
+  const codesHex = Array.from(new TextEncoder().encode(BUILDER_CODE))
     .map(b => b.toString(16).padStart(2, "0"))
     .join("");
 
-  // コード長（1バイト）
-  const codeLen = (BUILDER_CODE.length).toString(16).padStart(2, "0");
+  // codesLength = number of bytes in codes
+  const codesLength = (codesHex.length / 2).toString(16).padStart(2, "0");
 
-  // Schema 0: [code_count=01][code_len][code_hex]
-  const schemaData = "01" + codeLen + codeBytes;
+  return "0x" + codesHex + codesLength + SCHEMA_ID + ERC_MARKER;
+}
 
-  // Schema ID (0x00 = Builder Codes schema)
-  const schemaId = "00";
-
-  // サフィックス = schemaData + schemaId + ERC_MARKER
-  const suffix = schemaData + schemaId + ERC_MARKER;
-
+export function addERC8021Attribution(existingData) {
+  const suffix = getDataSuffix();
+  if (!existingData || existingData === "0x") {
+    return suffix;
+  }
   const base = existingData.startsWith("0x") ? existingData.slice(2) : existingData;
-  return "0x" + base + suffix;
+  const suffixHex = suffix.startsWith("0x") ? suffix.slice(2) : suffix;
+  return "0x" + base + suffixHex;
 }
