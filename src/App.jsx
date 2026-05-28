@@ -70,6 +70,15 @@ function WalletPanel({ onConnected }) {
 
 function Game() {
   const canvasRef = useRef(null);
+  const rootRef = useRef(null);
+
+  const toggleFullscreen = () => {
+    const el = rootRef.current;
+      el?.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  };
   const stateRef = useRef(null);
   const rafRef = useRef(null);
   const { data: walletClient } = useWalletClient();
@@ -102,7 +111,7 @@ function Game() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const onMove = (e) => { const rect = canvas.getBoundingClientRect(); if (stateRef.current) stateRef.current.mouseX = (e.clientX - rect.left) * (CANVAS_W / rect.width); };
-    const onTouch = (e) => { const rect = canvas.getBoundingClientRect(); if (stateRef.current && e.touches[0]) stateRef.current.mouseX = (e.touches[0].clientX - rect.left) * (CANVAS_W / rect.width); };
+    const onTouch = (e) => { e.preventDefault(); const rect = canvas.getBoundingClientRect(); if (stateRef.current && e.touches[0]) stateRef.current.mouseX = (e.touches[0].clientX - rect.left) * (CANVAS_W / rect.width); };
     canvas.addEventListener("mousemove", onMove);
     canvas.addEventListener("touchmove", onTouch, { passive: true });
     return () => { canvas.removeEventListener("mousemove", onMove); canvas.removeEventListener("touchmove", onTouch); };
@@ -246,10 +255,13 @@ function Game() {
   useEffect(() => { if (phase === "playing" && stateRef.current) { stateRef.current.running = true; rafRef.current = requestAnimationFrame(gameLoop); } return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }; }, [phase, gameLoop]);
 
   return (
-    <div style={styles.root}>
+    <div style={styles.root} ref={rootRef}>
       <div style={styles.header}>
         <div style={styles.logo}><span style={styles.logoIcon}>🔵</span><span style={styles.logoText}>BLOCK BREAKER</span><span style={styles.logoSub}>ONCHAIN</span></div>
-        <WalletPanel onConnected={setConnected} />
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          <button style={styles.fullscreenBtn} onClick={toggleFullscreen} title="フルスクリーン">⛶</button>
+          <WalletPanel onConnected={setConnected} />
+        </div>
       </div>
       <div style={styles.gameArea}>
         <div style={styles.canvasWrap}>
@@ -320,6 +332,7 @@ const styles = {
   overCard:{background:"white",borderRadius:16,padding:"32px 28px",textAlign:"center",border:"2px solid rgba(239,68,68,0.3)",boxShadow:"0 8px 32px rgba(239,68,68,0.12)",maxWidth:300},
   overTitle:{fontSize:28,fontWeight:900,letterSpacing:4,color:"#ef4444",marginBottom:8},overScore:{fontSize:18,fontWeight:700,color:"#1d4ed8",marginBottom:4},overStage:{fontSize:13,color:"#64748b",marginBottom:20},
   submitBtn:{width:"100%",padding:"12px",background:"linear-gradient(135deg,#2563eb,#1d4ed8)",color:"white",border:"none",borderRadius:10,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:10,letterSpacing:1},
+  fullscreenBtn:{fontSize:18,padding:"4px 8px",background:"transparent",border:"1px solid rgba(37,99,235,0.3)",borderRadius:6,cursor:"pointer",color:"#2563eb"},
   retryBtn:{width:"100%",padding:"10px",background:"transparent",color:"#2563eb",border:"2px solid rgba(37,99,235,0.3)",borderRadius:10,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"},
   sidePanel:{display:"flex",flexDirection:"column",gap:10,minWidth:140,maxWidth:160},
   statCard:{background:"white",border:"1px solid rgba(37,99,235,0.15)",borderRadius:10,padding:"10px 14px",boxShadow:"0 2px 8px rgba(37,99,235,0.06)"},danger:{borderColor:"rgba(239,68,68,0.4)",background:"#fff5f5"},
