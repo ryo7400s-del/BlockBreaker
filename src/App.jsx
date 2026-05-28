@@ -72,10 +72,7 @@ function Game() {
   const canvasRef = useRef(null);
   const rootRef = useRef(null);
 
-  const toggleFullscreen = () => {
-    const el = rootRef.current;
-    else { document.exitFullscreen?.(); }
-  };
+  const toggleFullscreen = () => { if (!document.fullscreenElement) { rootRef.current?.requestFullscreen?.(); } else { document.exitFullscreen?.(); } };
   const stateRef = useRef(null);
   const rafRef = useRef(null);
   const { data: walletClient } = useWalletClient();
