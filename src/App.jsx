@@ -74,10 +74,7 @@ function Game() {
 
   const toggleFullscreen = () => {
     const el = rootRef.current;
-      el?.requestFullscreen?.();
-    } else {
-      document.exitFullscreen?.();
-    }
+    else { document.exitFullscreen?.(); }
   };
   const stateRef = useRef(null);
   const rafRef = useRef(null);
