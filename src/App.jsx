@@ -89,6 +89,13 @@ function Game() {
   const [txMsg, setTxMsg] = useState("");
   const [ballCount, setBallCount] = useState(1);
   const [showChoice, setShowChoice] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const onFSChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFSChange);
+    return () => document.removeEventListener('fullscreenchange', onFSChange);
+  }, []);
 
   const initStage = useCallback((stageNum, livesVal, timeVal, scoreVal, ballsVal) => {
     const canvas = canvasRef.current;
@@ -287,8 +294,8 @@ function Game() {
         </div>
       </div>
       <div style={styles.gameArea}>
-        <div style={styles.canvasWrap}>
-          <canvas ref={canvasRef} width={CANVAS_W} height={CANVAS_H} style={styles.canvas} />
+        <div style={{...styles.canvasWrap, ...(isFullscreen ? styles.canvasWrapFS : {})}}>
+          <canvas ref={canvasRef} width={CANVAS_W} height={CANVAS_H} style={{...styles.canvas, ...(isFullscreen ? styles.canvasFS : {})}} />
           {phase === "menu" && <div style={styles.overlay}><div style={styles.menuCard}>
             <div style={styles.menuTitle}>BLOCK BREAKER</div>
             <div style={styles.menuSub}>ONCHAIN × BASE</div>
