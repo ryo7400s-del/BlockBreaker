@@ -319,7 +319,7 @@ function Game() {
             <button style={styles.retryBtn} onClick={startGame}>もう一度プレイ</button>
           </div></div>}
         </div>
-        <div style={styles.sidePanel}>
+        <div style={{...styles.sidePanel, display: phase === "playing" ? "none" : "flex"}}>
           {[["STAGE",stage],["SCORE",score],["LIVES","❤️".repeat(Math.max(0,lives))],["TIME",`${String(Math.floor(timeLeft/60)).padStart(2,"0")}:${String(timeLeft%60).padStart(2,"0")}`],["BALLS",ballCount],["BLOCKS",blocksLeft]].map(([label,val]) => (
             <div key={label} style={{...styles.statCard,...(label==="TIME"&&timeLeft<=30?styles.danger:{})}}><div style={styles.statLabel}>{label}</div><div style={styles.statValue}>{val}</div></div>
           ))}
