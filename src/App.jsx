@@ -22,7 +22,7 @@ const config = createConfig({
 });
 
 const CANVAS_W = 480, CANVAS_H = 520, PADDLE_W = 80, PADDLE_H = 10;
-const BALL_R = 7, BALL_SPEED = 4.5, BLOCK_H = 22, BLOCK_GAP = 4;
+const BALL_R = 7, BALL_SPEED = 7.0, BLOCK_H = 22, BLOCK_GAP = 4;
 const BLOCK_TOP = 60, LIVES_INIT = 3, TIME_INIT = 300;
 const STAGE_GRIDS = [3, 4, 5, 6, 7];
 
@@ -120,7 +120,10 @@ function Game() {
     const dt = Math.min((now - s.lastTick) / 16.67, 3);
     s.lastTick = now;
     if (now - s.timerTick >= 1000) { s.time -= 1; s.timerTick = now; setTimeLeft(s.time); if (s.time <= 0) { s.running = false; setPhase("gameOver"); return; } }
-    s.paddle.x = Math.max(0, Math.min(CANVAS_W - PADDLE_W, s.mouseX - PADDLE_W / 2));
+    const targetX = Math.max(0, Math.min(CANVAS_W - PADDLE_W, s.mouseX - PADDLE_W / 2));
+    const paddleSpeed = 18 * dt;
+    const diff = targetX - s.paddle.x;
+    s.paddle.x += Math.abs(diff) < paddleSpeed ? diff : Math.sign(diff) * paddleSpeed;
     for (const ball of s.balls) {
       if (!ball.alive) continue;
       ball.x += ball.vx * dt; ball.y += ball.vy * dt;
