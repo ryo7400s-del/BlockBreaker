@@ -34,10 +34,12 @@ function buildBlocks(stage) {
   const blockW = (totalW - (cols - 1) * BLOCK_GAP) / cols;
   const blocks = [];
   const bombIdx = Math.floor(Math.random() * cols * cols);
+  let fallIdx = Math.floor(Math.random() * cols * cols);
+  while (fallIdx === bombIdx) fallIdx = Math.floor(Math.random() * cols * cols);
   let idx = 0;
   for (let r = 0; r < cols; r++) {
     for (let c = 0; c < cols; c++) {
-      blocks.push({ id: idx, x: 20 + c * (blockW + BLOCK_GAP), y: BLOCK_TOP + r * (BLOCK_H + BLOCK_GAP), w: blockW, h: BLOCK_H, alive: true, bomb: idx === bombIdx });
+      blocks.push({ id: idx, x: 20 + c * (blockW + BLOCK_GAP), y: BLOCK_TOP + r * (BLOCK_H + BLOCK_GAP), w: blockW, h: BLOCK_H, alive: true, bomb: idx === bombIdx, fall: idx === fallIdx });
       idx++;
     }
   }
@@ -97,7 +99,7 @@ function Game() {
       const angle = -Math.PI / 2 + (i - (ballsVal - 1) / 2) * 0.25;
       balls.push({ x: CANVAS_W / 2 + i * 15, y: CANVAS_H - 80, vx: Math.cos(angle) * BALL_SPEED, vy: Math.sin(angle) * BALL_SPEED, alive: true });
     }
-    stateRef.current = { paddle: { x: CANVAS_W / 2 - PADDLE_W / 2, y: CANVAS_H - 40 }, balls, blocks, lives: livesVal, time: timeVal, score: scoreVal, stage: stageNum, lastTick: performance.now(), timerTick: performance.now(), running: true, mouseX: CANVAS_W / 2 };
+    stateRef.current = { paddle: { x: CANVAS_W / 2 - PADDLE_W / 2, y: CANVAS_H - 40 }, balls, blocks, lives: livesVal, time: timeVal, score: scoreVal, stage: stageNum, lastTick: performance.now(), timerTick: performance.now(), running: true, mouseX: CANVAS_W / 2, fallBalls: [] };
     setLives(livesVal); setTimeLeft(timeVal); setScore(scoreVal); setStage(stageNum); setBallCount(ballsVal); setBlocksLeft(blocks.length);
   }, []);
 
@@ -149,6 +151,7 @@ function Game() {
         if (!block.alive) continue;
         if (ball.x + BALL_R > block.x && ball.x - BALL_R < block.x + block.w && ball.y + BALL_R > block.y && ball.y - BALL_R < block.y + block.h) {
           block.alive = false; s.score += 10; setScore(s.score);
+          if (block.fall) { if (!s.fallBalls) s.fallBalls=[]; s.fallBalls.push({ x: block.x+block.w/2, y: block.y+block.h, alive: true }); }
           if (block.bomb) { for (const o of s.blocks) { if (!o.alive) continue; if (Math.abs(o.x - block.x) <= block.w * 2 && Math.abs(o.y - block.y) <= block.h * 2) { o.alive = false; s.score += 10; } } setScore(s.score); }
           const ox = Math.min(ball.x + BALL_R - block.x, block.x + block.w - (ball.x - BALL_R));
           const oy = Math.min(ball.y + BALL_R - block.y, block.y + block.h - (ball.y - BALL_R));
@@ -157,6 +160,20 @@ function Game() {
         }
       }
     }
+    if (!s.fallBalls) s.fallBalls=[];
+    for (const fb of s.fallBalls) {
+      if (!fb.alive) continue;
+      fb.y += 3 * dt;
+      if (fb.y+BALL_R >= s.paddle.y && fb.y <= s.paddle.y+PADDLE_H && fb.x >= s.paddle.x && fb.x <= s.paddle.x+PADDLE_W) {
+        fb.alive = false;
+        const hit = (fb.x-(s.paddle.x+PADDLE_W/2))/(PADDLE_W/2);
+        const vx = hit*BALL_SPEED*1.2;
+        const vy = -Math.sqrt(Math.max(0, BALL_SPEED*BALL_SPEED-vx*vx));
+        s.balls.push({ x: fb.x, y: s.paddle.y-BALL_R, vx, vy, alive: true });
+      }
+      if (fb.y > CANVAS_H) fb.alive = false;
+    }
+    s.fallBalls = s.fallBalls.filter(fb => fb.alive);
     if (s.balls.every(b => !b.alive)) {
       s.lives -= 1; setLives(s.lives);
       if (s.lives <= 0) { s.running = false; setPhase("gameOver"); return; }
@@ -189,6 +206,14 @@ function Game() {
         ctx2.fillStyle = g; ctx2.beginPath(); ctx2.roundRect(block.x+1, block.y+1, block.w-2, block.h-2, 4); ctx2.fill();
         ctx2.fillStyle = "rgba(255,255,255,0.18)"; ctx2.beginPath(); ctx2.roundRect(block.x+2, block.y+2, block.w-4, (block.h-4)/2, 3); ctx2.fill();
       }
+      if (block.fall && block.alive) {
+        const gf = ctx2.createLinearGradient(block.x, block.y, block.x, block.y+block.h);
+        gf.addColorStop(0, "#22c55e"); gf.addColorStop(1, "#15803d");
+        ctx2.fillStyle = gf; ctx2.beginPath(); ctx2.roundRect(block.x+1, block.y+1, block.w-2, block.h-2, 4); ctx2.fill();
+        ctx2.fillStyle = "rgba(255,255,255,0.2)"; ctx2.beginPath(); ctx2.roundRect(block.x+2, block.y+2, block.w-4, (block.h-4)/2, 3); ctx2.fill();
+        ctx2.fillStyle = "white"; ctx2.font = "bold 12px monospace"; ctx2.textAlign = "center"; ctx2.textBaseline = "middle";
+        ctx2.fillText("GET", block.x+block.w/2, block.y+block.h/2);
+      }
     }
     const pg = ctx2.createLinearGradient(s.paddle.x, s.paddle.y, s.paddle.x, s.paddle.y + PADDLE_H);
     pg.addColorStop(0, "#2563eb"); pg.addColorStop(1, "#1d4ed8");
@@ -200,6 +225,7 @@ function Game() {
       ctx2.beginPath(); ctx2.arc(ball.x, ball.y, BALL_R, 0, Math.PI*2); ctx2.fill();
       ctx2.strokeStyle = "#2563eb"; ctx2.lineWidth = 2; ctx2.stroke(); ctx2.shadowBlur = 0;
     }
+    if (s.fallBalls) { for (const fb of s.fallBalls) { if (!fb.alive) continue; ctx2.fillStyle="#22c55e"; ctx2.shadowColor="rgba(34,197,94,0.8)"; ctx2.shadowBlur=14; ctx2.beginPath(); ctx2.arc(fb.x, fb.y, BALL_R, 0, Math.PI*2); ctx2.fill(); ctx2.strokeStyle="#15803d"; ctx2.lineWidth=2; ctx2.stroke(); ctx2.shadowBlur=0; } }
     ctx2.fillStyle = "rgba(248,250,255,0.9)"; ctx2.fillRect(0, 0, CANVAS_W, 50);
     ctx2.font = "bold 13px 'Courier New',monospace"; ctx2.fillStyle = "#1e40af"; ctx2.textAlign = "left";
     ctx2.fillText(`STAGE ${s.stage}`, 14, 20); ctx2.fillText(`❤️ ${s.lives}`, 14, 38);
