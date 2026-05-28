@@ -1,3 +1,4 @@
+import { addERC8021Attribution } from "./attribution.js";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createConfig, WagmiProvider, useAccount, useConnect, useDisconnect, useWalletClient, useSwitchChain, http } from "wagmi";
 import { base } from "wagmi/chains";
@@ -5,14 +6,7 @@ import { injected, coinbaseWallet, walletConnect } from "wagmi/connectors";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { encodeFunctionData } from "viem";
 
-const BUILDER_CODE = "bc_dw8n1qvm";
-function addERC8021Attribution(existingData) {
-  const codeHex = Array.from(new TextEncoder().encode(BUILDER_CODE))
-    .map(b => b.toString(16).padStart(2, "0")).join("");
-  const suffix = "ef" + "01" + codeHex.padEnd(64, "0");
-  const base = existingData.startsWith("0x") ? existingData.slice(2) : existingData;
-  return "0x" + base + suffix;
-}
+
 
 const GAME_CONTRACT = "0xD665F550C4697Fe628e3b362F8b43E8afd02bD4A";
 const GAME_ABI = [
